@@ -1,0 +1,640 @@
+
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
+import javax.swing.*;
+
+
+
+public class JCal extends JFrame /*implements ActionListener*/{
+	private static final long serialVersionUID = 1L;
+	int m_perLen = 70;
+	int m_boardT = 20;
+	int m_boardL = 20;
+	int m_boardB = 20;
+	int m_boardR = 20;
+	int m_interLen = 5;
+	
+	JTextField m_msgInput = null;
+	JTextField m_msgOutput = null;
+	JRadioButton m_radioBase = null;
+	JRadioButton m_radioExt = null;
+	ActionListener m_btnListener = null ;
+	ActionListener m_radioListener = null ;
+	JButton m_btn0;
+	JButton m_btn1;
+	JButton m_btn2;
+	JButton m_btn3;
+	JButton m_btn4;
+	JButton m_btn5;
+	JButton m_btn6;
+	JButton m_btn7;
+	JButton m_btn8;
+	JButton m_btn9;
+	JButton m_btnPt;
+	JButton m_btnAdd;
+	JButton m_btnSub;
+	JButton m_btnMul;
+	JButton m_btnMd;
+	JButton m_btnClr;
+	JButton m_btnEq;
+	
+	JButton m_btnPF;//(
+	JButton m_btnLi;//)
+	JButton m_btnChi;
+	JButton m_btnZHang;
+	JButton m_btnYingli;
+	JButton m_btnYingChi;
+	JButton m_btnYingCun;
+	JButton m_btnJin;
+	JButton m_btnLiang;
+	JButton m_btnBang;
+	JButton m_btnAngSi;
+	JButton m_btnAngLoge;
+	JButton m_btnAngLog10;
+	JButton m_btnAngex;
+	JButton m_btnAngAb;
+	JButton m_btnAngZgeng;
+	
+	String m_strInput = "";
+	String m_calType = "base"; //"ex"
+	int m_sLeftNum = 0;
+	int m_sRightNum = 0;
+	
+	private int GetX(int row,int col) 
+	{
+		return m_boardL + (m_perLen + m_interLen)*(col-1);
+	}
+	private int GetY(int row,int col) 
+	{
+		return m_boardT + (m_perLen + m_interLen)*(row-1);
+	}
+	private Boolean IsSign(char ch) 
+	{
+		return ch == '+' || ch == '-' ||ch == '*' ||ch == '/' ;
+	}
+	private Boolean IsNum(char ch) 
+	{
+		return ch >= '0' &&  ch <= '9';
+	}
+	//按了下数字
+	private void OnInputNum(int num) 
+	{
+		m_strInput += Integer.toString(num);
+		m_msgInput.setText(m_strInput);
+	}
+	//按下了+-*/
+	private void OnInputSign(char sign) 
+	{
+		if(m_calType == "base") 
+		{
+			if(m_strInput.length() == 0 && (sign == '*' || sign == '/')) 
+				return;
+			else if(m_strInput.length() >= 1)
+			{
+				char prev = m_strInput.charAt(m_strInput.length() - 1);
+				if(prev == '.')
+					return ;
+				else if(IsSign(prev))
+					return ;
+			}
+			m_strInput += sign;
+			m_msgInput.setText(m_strInput);	
+		}else if(m_calType == "ex") 
+		{
+			if(m_strInput.length() == 0)
+				return;
+			else if(m_strInput.charAt(m_strInput.length() - 1) == '.')
+				return;
+			JLogic logic = new JLogic();
+			if(sign == '+') 
+			{
+				float res = logic.CalSin(m_strInput);
+				m_msgOutput.setText(Float.toString(res));
+			}
+			else if(sign == '-') 
+			{
+				float res = logic.CalCos(m_strInput);
+				m_msgOutput.setText(Float.toString(res));
+			}
+			else if(sign == '*') 
+			{
+				float res = logic.CalTan(m_strInput);
+				m_msgOutput.setText(Float.toString(res));
+			}
+			else if(sign == '/') 
+			{
+				float res = logic.CalCot(m_strInput);
+				m_msgOutput.setText(Float.toString(res));
+			}
+		}
+	}
+	//按下了.
+	private void OnInputPoint() 
+	{
+		if(m_strInput.length() == 0)
+			return;
+		char prev = m_strInput.charAt(m_strInput.length() - 1);
+		if(IsSign(prev) || prev == '(' || prev == ')')
+			return;
+		m_strInput += ".";
+		m_msgInput.setText(m_strInput);
+	}
+	private void OnInputClear() 
+	{
+		m_strInput = "";
+		m_sLeftNum = 0;
+		m_sRightNum = 0;
+		m_msgInput.setText(m_strInput);
+		m_msgOutput.setText("");
+	}
+	private void OnInputEq() 
+	{
+		if(m_sRightNum != m_sLeftNum)
+			return;
+		char ch = m_strInput.charAt(m_strInput.length() - 1);
+		if(IsNum(ch) || ch == ')') 
+		{
+			JLogic logic = new JLogic();
+			Float res = logic.CalBase(m_strInput);
+			m_msgOutput.setText(res.toString());	
+		}
+	}
+	private void OnInputPF() 
+	{
+		if(m_calType == "ex")
+		{
+			JLogic logic = new JLogic();
+			Float res = logic.CalPingFang(m_strInput);
+			m_msgOutput.setText(res.toString());
+		}else if(m_calType == "base") //(
+		{
+			if(m_strInput.length() == 0) 
+			{
+				m_strInput += "(";
+				m_sLeftNum++;
+				m_msgInput.setText(m_strInput);
+			}else if(IsSign(m_strInput.charAt(m_strInput.length() - 1)) || m_strInput.charAt(m_strInput.length() - 1) == '(') 
+			{
+				m_strInput += "(";
+				m_sLeftNum++;
+				m_msgInput.setText(m_strInput);
+			}
+		}
+	}
+	private void OnInputLi() 
+	{
+		if(m_calType == "ex") 
+		{
+			JLogic logic = new JLogic();
+			Float res = logic.CalLi(m_strInput);
+			m_msgOutput.setText(res.toString()+"(米)");
+		}else if(m_calType == "base") //)
+		{
+			if(m_strInput.length() == 0)
+				return;
+			else if(m_sRightNum >= m_sLeftNum)
+				return;
+			else if(!IsNum(m_strInput.charAt(m_strInput.length() - 1)) && m_strInput.charAt(m_strInput.length() - 1) != ')')
+				return;
+			m_strInput += ")";
+			m_sRightNum++;
+			m_msgInput.setText(m_strInput);			
+		}
+	}
+	
+	private void OnRadioBase() 
+	{
+		if(m_calType == "base")
+			return;
+		m_calType = "base";
+		m_msgInput.setText("");
+		m_msgOutput.setText("");
+		m_strInput = "";
+		m_btnChi.setVisible(false);
+		m_btnZHang.setVisible(false);
+		m_btnYingli.setVisible(false);
+		m_btnYingChi.setVisible(false);
+		m_btnYingCun.setVisible(false);
+		m_btnJin.setVisible(false);
+		m_btnLiang.setVisible(false);
+		m_btnBang.setVisible(false);
+		m_btnAngSi.setVisible(false);
+		m_btnAngLoge.setVisible(false);
+		m_btnAngLog10.setVisible(false);
+		m_btnAngex.setVisible(false);
+		m_btnAngAb.setVisible(false);
+		m_btnAngZgeng.setVisible(false);
+		m_btnAdd.setText("+");;
+		m_btnSub.setText("-");
+		m_btnMul.setText("*");
+		m_btnMd.setText("/");
+		m_btnPF.setText("(");
+		m_btnLi.setText(")");
+		this.setSize(m_boardL + m_boardR + 5*m_perLen + 4*m_interLen + 30,m_boardT + m_boardB + 8*m_perLen + 6*m_interLen + 50);
+	}
+	private void OnRadioExt() 
+	{
+		if(m_calType == "ex")
+			return;
+		m_calType = "ex";
+		m_msgInput.setText("");
+		m_msgOutput.setText("");
+		m_strInput = "";
+		m_btnChi.setVisible(true);
+		m_btnZHang.setVisible(true);
+		m_btnYingli.setVisible(true);
+		m_btnYingChi.setVisible(true);
+		m_btnYingCun.setVisible(true);
+		m_btnJin.setVisible(true);
+		m_btnLiang.setVisible(true);
+		m_btnBang.setVisible(true);
+		m_btnAngSi.setVisible(true);	
+		m_btnAngLoge.setVisible(true);
+		m_btnAngLog10.setVisible(true);
+		m_btnAngex.setVisible(true);
+		m_btnAngAb.setVisible(true);
+		m_btnAngZgeng.setVisible(true);
+		this.setSize(m_boardL + m_boardR + 5*m_perLen + 4*m_interLen + 30,m_boardT + m_boardB + 11*m_perLen + 6*m_interLen + 50);
+		m_btnAdd.setText("sin");;
+		m_btnSub.setText("cos");
+		m_btnMul.setText("tan");
+		m_btnMd.setText("cot");
+		m_btnPF.setText("平方");
+		m_btnLi.setText("里");
+	}
+	
+	public void Show() 
+	{
+		m_btnListener = new ActionListener() 
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				JLogic logic = new JLogic();
+				Object obj = arg0.getSource();
+				if(obj == m_btn0) OnInputNum(0);
+				else if(obj == m_btn1) OnInputNum(1);
+				else if(obj == m_btn2) OnInputNum(2);
+				else if(obj == m_btn3) OnInputNum(3);
+				else if(obj == m_btn4) OnInputNum(4);
+				else if(obj == m_btn5) OnInputNum(5);
+				else if(obj == m_btn6) OnInputNum(6);
+				else if(obj == m_btn7) OnInputNum(7);
+				else if(obj == m_btn8) OnInputNum(8);
+				else if(obj == m_btn9) OnInputNum(9);
+				else if(obj == m_btnEq) OnInputEq();
+				else if(obj == m_btnAdd) OnInputSign('+');
+				else if(obj == m_btnSub) OnInputSign('-');
+				else if(obj == m_btnMul) OnInputSign('*');
+				else if(obj == m_btnMd) OnInputSign('/');
+				else if(obj == m_btnClr) OnInputClear() ;
+				else if(obj == m_btnPt) OnInputPoint() ;
+				else if(obj == m_btnPF) {OnInputPF();}
+				else if(obj == m_btnLi) {OnInputLi();}
+				else if(obj == m_btnChi) {Float res = logic.CalChi(m_strInput);m_msgOutput.setText(res.toString()+"(米)");}
+				else if(obj == m_btnZHang) {Float res = logic.CalZHang(m_strInput);m_msgOutput.setText(res.toString()+"(米)");}
+				else if(obj == m_btnYingli) {Float res = logic.CalYingLi(m_strInput);m_msgOutput.setText(res.toString()+"(米)");}
+				else if(obj == m_btnYingChi) {Float res = logic.CalYingChi(m_strInput);m_msgOutput.setText(res.toString()+"(米)");}
+				else if(obj == m_btnYingCun) {Float res = logic.CalYingCun(m_strInput);m_msgOutput.setText(res.toString()+"(米)");}			
+				else if(obj == m_btnJin) {Float res = logic.CalJin(m_strInput);m_msgOutput.setText(res.toString()+("(千克)"));}
+				else if(obj == m_btnLiang) {Float res = logic.CalLiang(m_strInput);m_msgOutput.setText(res.toString()+("(千克)"));}
+				else if(obj == m_btnBang) {Float res = logic.CalBang(m_strInput);m_msgOutput.setText(res.toString()+("(千克)"));}
+				else if(obj == m_btnAngSi) {Float res = logic.CalAngSi(m_strInput);m_msgOutput.setText(res.toString()+("(千克)"));}
+				else if(obj == m_btnAngLoge) {Float res = logic.CalLoge(m_strInput);m_msgOutput.setText(res.toString());}
+				else if(obj == m_btnAngLog10) {Float res = logic.CalLog10(m_strInput);m_msgOutput.setText(res.toString());}
+				else if(obj == m_btnAngex) {Float res = logic.CalEx(m_strInput);m_msgOutput.setText(res.toString());}
+				else if(obj == m_btnAngAb) {Float res = logic.CalCeil(m_strInput);m_msgOutput.setText(res.toString());}
+				else if(obj == m_btnAngZgeng) {Float res = logic.CalZheng(m_strInput);m_msgOutput.setText(res.toString());}
+			}	
+		};
+		m_radioListener = new ActionListener() 
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				Object obj = arg0.getSource();
+				if(obj == m_radioBase) 
+				{
+					OnRadioBase();
+				}
+				else if(obj == m_radioExt) 
+				{
+					OnRadioExt() ;
+				}
+			}	
+		};
+		
+		this.setTitle("cal");
+		this.setVisible(true);
+		this.setSize(m_boardL + m_boardR + 5*m_perLen + 4*m_interLen + 30,m_boardT + m_boardB + 8*m_perLen + 6*m_interLen + 50);
+		this.setLocation(500,200);
+		this.setLayout(null);
+		this.setResizable(false);
+		
+		//输入框
+		int rowIndex = 0;
+		m_msgInput = new JTextField();
+		m_msgInput.setLocation(m_boardL, m_boardT);
+		m_msgInput.setSize(5*m_perLen + 4*m_interLen, m_perLen);
+		//m_msgInput.setLineWrap(true);
+		m_msgInput.setHorizontalAlignment(JTextField.RIGHT);
+		m_msgInput.setEditable(false);
+		m_msgInput.setAlignmentX(Component.RIGHT_ALIGNMENT);
+		add(m_msgInput);
+		rowIndex++;
+		//输出狂
+		m_msgOutput = new JTextField();
+		m_msgOutput.setLocation(m_boardL, m_boardT + rowIndex * (m_perLen + m_interLen));
+		m_msgOutput.setSize(5*m_perLen + 4*m_interLen, m_perLen);
+		//m_msgOutput.setLineWrap(true);
+		m_msgOutput.setHorizontalAlignment(JTextField.RIGHT);
+		m_msgOutput.setEditable(false);
+		m_msgOutput.setAlignmentX(0);
+		add(m_msgOutput);
+		rowIndex++;
+		
+		//基本功能
+		m_radioBase = new  JRadioButton("基本功能");
+		m_radioBase.setLocation(GetX(3,1),GetY(3,1));
+		m_radioBase.setSize((5*m_perLen + 4*m_interLen)/2, m_perLen);
+		//扩展功能
+		m_radioExt = new  JRadioButton("扩展功能");
+		m_radioExt.setLocation(GetX(3,4),GetY(3,4));
+		m_radioExt.setSize((5*m_perLen + 4*m_interLen)/2, m_perLen);
+		ButtonGroup g = new ButtonGroup();
+		g.add(m_radioBase);
+		g.add(m_radioExt);
+		m_radioBase.setSelected(true);
+		add(m_radioBase);
+		add(m_radioExt);
+		m_radioBase.addActionListener(m_radioListener);
+		m_radioExt.addActionListener(m_radioListener);
+		rowIndex++;
+		
+		//7
+		m_btn7 = new JButton();
+		m_btn7.setLocation(GetX(4,1),GetY(4,1));
+		m_btn7.setSize(m_perLen,m_perLen);
+		m_btn7.setText("7");
+		add(m_btn7);
+		m_btn7.addActionListener(m_btnListener);
+		//8
+		m_btn8 = new JButton();
+		m_btn8.setLocation(GetX(4,2),GetY(4,2));
+		m_btn8.setSize(m_perLen,m_perLen);
+		m_btn8.setText("8");
+		add(m_btn8);
+		m_btn8.addActionListener(m_btnListener);
+		//9
+		m_btn9 = new JButton();
+		m_btn9.setLocation(GetX(4,3),GetY(4,3));
+		m_btn9.setSize(m_perLen,m_perLen);
+		m_btn9.setText("9");
+		add(m_btn9);
+		m_btn9.addActionListener(m_btnListener);		
+		//1
+		m_btnMd = new JButton();
+		m_btnMd.setLocation(GetX(4,4),GetY(4,4));
+		m_btnMd.setSize(m_perLen,m_perLen);
+		m_btnMd.setText("/");
+		add(m_btnMd);
+		m_btnMd.addActionListener(m_btnListener);
+		//CLR
+		m_btnClr = new JButton();
+		m_btnClr.setLocation(GetX(4,5),GetY(4,5));
+		m_btnClr.setSize(m_perLen,m_perLen*2+m_interLen);
+		m_btnClr.setText("C");
+		add(m_btnClr);
+		m_btnClr.addActionListener(m_btnListener);
+		
+		//4
+		m_btn4 = new JButton();
+		m_btn4.setLocation(GetX(5,1),GetY(5,1));
+		m_btn4.setSize(m_perLen,m_perLen);
+		m_btn4.setText("4");
+		add(m_btn4);
+		m_btn4.addActionListener(m_btnListener);
+		//5
+		m_btn5 = new JButton();
+		m_btn5.setLocation(GetX(5,2),GetY(5,2));
+		m_btn5.setSize(m_perLen,m_perLen);
+		m_btn5.setText("5");
+		add(m_btn5);
+		m_btn5.addActionListener(m_btnListener);
+		//6
+		m_btn6 = new JButton();
+		m_btn6.setLocation(GetX(5,3),GetY(5,3));
+		m_btn6.setSize(m_perLen,m_perLen);
+		m_btn6.setText("6");
+		add(m_btn6);
+		m_btn6.addActionListener(m_btnListener);		
+		//*
+		m_btnMul = new JButton();
+		m_btnMul.setLocation(GetX(5,4),GetY(5,4));
+		m_btnMul.setSize(m_perLen,m_perLen);
+		m_btnMul.setText("*");
+		add(m_btnMul);
+		m_btnMul.addActionListener(m_btnListener);	
+		
+		//1
+		m_btn1 = new JButton();
+		m_btn1.setLocation(GetX(6,1),GetY(6,1));
+		m_btn1.setSize(m_perLen,m_perLen);
+		m_btn1.setText("1");
+		add(m_btn1);
+		m_btn1.addActionListener(m_btnListener);
+		//2
+		m_btn2 = new JButton();
+		m_btn2.setLocation(GetX(6,2),GetY(6,2));
+		m_btn2.setSize(m_perLen,m_perLen);
+		m_btn2.setText("2");
+		add(m_btn2);
+		m_btn2.addActionListener(m_btnListener);
+		//3
+		m_btn3 = new JButton();
+		m_btn3.setLocation(GetX(6,3),GetY(6,3));
+		m_btn3.setSize(m_perLen,m_perLen);
+		m_btn3.setText("3");
+		add(m_btn3);
+		m_btn3.addActionListener(m_btnListener);		
+		//-
+		m_btnSub = new JButton();
+		m_btnSub.setLocation(GetX(6,4),GetY(6,4));
+		m_btnSub.setSize(m_perLen,m_perLen);
+		m_btnSub.setText("-");
+		add(m_btnSub);
+		m_btnSub.addActionListener(m_btnListener);
+		//=
+		m_btnEq = new JButton();
+		m_btnEq.setLocation(GetX(6,5),GetY(6,5));
+		m_btnEq.setSize(m_perLen,m_perLen*2+m_interLen);
+		m_btnEq.setText("=");
+		add(m_btnEq);
+		m_btnEq.addActionListener(m_btnListener);
+		
+		//0
+		m_btn0 = new JButton();
+		m_btn0.setLocation(GetX(7,1),GetY(7,1));
+		m_btn0.setSize(m_perLen*2+m_interLen,m_perLen);
+		m_btn0.setText("0");
+		add(m_btn0);
+		m_btn0.addActionListener(m_btnListener);
+		//.
+		m_btnPt = new JButton();
+		m_btnPt.setLocation(GetX(7,3),GetY(7,3));
+		m_btnPt.setSize(m_perLen,m_perLen);
+		m_btnPt.setText(".");
+		add(m_btnPt);
+		m_btnPt.addActionListener(m_btnListener);
+		//+
+		m_btnAdd = new JButton();
+		m_btnAdd.setLocation(GetX(7,4),GetY(7,4));
+		m_btnAdd.setSize(m_perLen,m_perLen);
+		m_btnAdd.setText("+");
+		add(m_btnAdd);
+		m_btnAdd.addActionListener(m_btnListener);
+		
+		m_btnPF = new JButton();
+		m_btnPF.setLocation(GetX(8,1),GetY(8,1));
+		m_btnPF.setSize(m_perLen,m_perLen);
+		m_btnPF.setText("(");
+		add(m_btnPF);
+		m_btnPF.addActionListener(m_btnListener);
+		
+		m_btnLi = new JButton();
+		m_btnLi.setLocation(GetX(8,2),GetY(8,2));
+		m_btnLi.setSize(m_perLen,m_perLen);
+		m_btnLi.setText(")");
+		add(m_btnLi);
+		m_btnLi.addActionListener(m_btnListener);
+		
+		m_btnChi = new JButton();
+		m_btnChi.setLocation(GetX(8,3),GetY(8,3));
+		m_btnChi.setSize(m_perLen,m_perLen);
+		m_btnChi.setText("尺");
+		add(m_btnChi);
+		m_btnChi.addActionListener(m_btnListener);
+		
+		m_btnZHang = new JButton();
+		m_btnZHang.setLocation(GetX(8,4),GetY(8,4));
+		m_btnZHang.setSize(m_perLen,m_perLen);
+		m_btnZHang.setText("丈");
+		add(m_btnZHang);
+		m_btnZHang.addActionListener(m_btnListener);
+		
+		m_btnYingli = new JButton();
+		m_btnYingli.setLocation(GetX(8,5),GetY(8,5));
+		m_btnYingli.setSize(m_perLen,m_perLen);
+		m_btnYingli.setText("英里");
+		add(m_btnYingli);
+		m_btnYingli.addActionListener(m_btnListener);
+		
+		m_btnYingChi = new JButton();
+		m_btnYingChi.setLocation(GetX(9,1),GetY(9,1));
+		m_btnYingChi.setSize(m_perLen,m_perLen);
+		m_btnYingChi.setText("英尺");
+		add(m_btnYingChi);
+		m_btnYingChi.addActionListener(m_btnListener);
+		
+		m_btnYingCun = new JButton();
+		m_btnYingCun.setLocation(GetX(9,2),GetY(9,2));
+		m_btnYingCun.setSize(m_perLen,m_perLen);
+		m_btnYingCun.setText("英寸");
+		add(m_btnYingCun);
+		m_btnYingCun.addActionListener(m_btnListener);
+		
+		m_btnJin = new JButton();
+		m_btnJin.setLocation(GetX(9,3),GetY(9,3));
+		m_btnJin.setSize(m_perLen,m_perLen);
+		m_btnJin.setText("斤");
+		add(m_btnJin);
+		m_btnJin.addActionListener(m_btnListener);
+		
+		m_btnLiang = new JButton();
+		m_btnLiang.setLocation(GetX(9,4),GetY(9,4));
+		m_btnLiang.setSize(m_perLen,m_perLen);
+		m_btnLiang.setText("两");
+		add(m_btnLiang);
+		m_btnLiang.addActionListener(m_btnListener);
+		
+		m_btnBang = new JButton();
+		m_btnBang.setLocation(GetX(9,5),GetY(9,5));
+		m_btnBang.setSize(m_perLen,m_perLen);
+		m_btnBang.setText("磅");
+		add(m_btnBang);
+		m_btnBang.addActionListener(m_btnListener);
+		
+		m_btnAngLoge = new JButton();
+		m_btnAngLoge.setLocation(GetX(10,1),GetY(10,1));
+		m_btnAngLoge.setSize(m_perLen,m_perLen);
+		m_btnAngLoge.setText("loge");
+		add(m_btnAngLoge);
+		m_btnAngLoge.addActionListener(m_btnListener);
+		
+		m_btnAngLog10 = new JButton();
+		m_btnAngLog10.setLocation(GetX(10,2),GetY(10,2));
+		m_btnAngLog10.setSize(m_perLen,m_perLen);
+		m_btnAngLog10.setText("log10");
+		add(m_btnAngLog10);
+		m_btnAngLog10.addActionListener(m_btnListener);
+		
+		m_btnAngex = new JButton();
+		m_btnAngex.setLocation(GetX(10,3),GetY(10,3));
+		m_btnAngex.setSize(m_perLen,m_perLen);
+		m_btnAngex.setText("ex");
+		add(m_btnAngex);
+		m_btnAngex.addActionListener(m_btnListener);
+		
+		m_btnAngAb = new JButton();
+		m_btnAngAb.setLocation(GetX(10,4),GetY(10,4));
+		m_btnAngAb.setSize(m_perLen,m_perLen);
+		m_btnAngAb.setText("ceil");
+		add(m_btnAngAb);
+		m_btnAngAb.addActionListener(m_btnListener);
+		
+		m_btnAngZgeng = new JButton();
+		m_btnAngZgeng.setLocation(GetX(10,5),GetY(10,5));
+		m_btnAngZgeng.setSize(m_perLen,m_perLen);
+		m_btnAngZgeng.setText("floor");
+		add(m_btnAngZgeng);
+		m_btnAngZgeng.addActionListener(m_btnListener);
+		
+		m_btnAngSi = new JButton();
+		m_btnAngSi.setLocation(GetX(11,1),GetY(11,1));
+		m_btnAngSi.setSize(m_perLen,m_perLen);
+		m_btnAngSi.setText("盎司");
+		add(m_btnAngSi);
+		m_btnAngSi.addActionListener(m_btnListener);
+		
+		{
+			m_btnChi.setVisible(false);
+			m_btnZHang.setVisible(false);
+			m_btnYingli.setVisible(false);
+			m_btnYingChi.setVisible(false);
+			m_btnYingCun.setVisible(false);
+			m_btnJin.setVisible(false);
+			m_btnLiang.setVisible(false);
+			m_btnBang.setVisible(false);
+			m_btnAngSi.setVisible(false);
+		}
+		
+		repaint();
+		
+		this.addWindowListener(new WindowAdapter() {	  
+			 public void windowClosing(WindowEvent e) {  
+				 super.windowClosing(e);  
+				 setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			 	} 
+			 }); 
+	}	
+	
+	public static void main(String [] args) 
+	{
+		JCal c = new JCal();
+		c.Show();
+	}
+
+}
