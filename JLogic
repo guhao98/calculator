@@ -1,0 +1,373 @@
+
+//import java.util.Iterator;
+import java.util.LinkedList;
+
+//import javax.swing.JOptionPane;
+
+public class JLogic {
+	public class Node
+	{
+		String m_nodeType; //"val" "sign" "ls" "rs"
+		float m_val;
+		char m_sign;//+-*/
+		Node m_pNode;
+	}
+	private LinkedList<Node> m_nodeList = new LinkedList<Node>();
+	private Boolean IsSign(char ch) 
+	{
+		return ch == '+' || ch == '-' || ch == '*' || ch == '/';
+	}
+	private Boolean IsS(char ch) 
+	{
+		return ch == '(' || ch == ')' ;
+	}
+	private String NodeToString(int index1,int index2) 
+	{
+		String strRet = "";
+		for(int i = index1;i <= index2;++i) 
+		{
+			if(m_nodeList.get(i).m_nodeType == "val")
+				strRet += Float.toString(m_nodeList.get(i).m_val);
+			else if(m_nodeList.get(i).m_nodeType == "sign")
+				strRet += m_nodeList.get(i).m_sign;	
+			else if(m_nodeList.get(i).m_nodeType == "ls")
+				strRet += "(";	
+			else if(m_nodeList.get(i).m_nodeType == "rs")
+				strRet += ")";	
+		}
+		return strRet;
+	}
+	private void OutPutDebugNode()
+	{
+		System.out.println("");
+		System.out.print(NodeToString(0,m_nodeList.size()-1));
+	
+	}
+
+	private void StringToNodeList(String str) 
+	{
+		m_nodeList.clear();
+		//先把所有的符号的位置解析出来
+		LinkedList<Integer> listSign = new LinkedList<Integer>();
+		for(int i = 0;i < str.length();++i) 
+		{
+			char ch = str.charAt(i);
+			if(IsSign(ch)) 
+			{
+				if(i == 0)
+					continue;
+				if(str.charAt(i-1) == '(')
+					continue;
+			}
+			if(IsSign(ch) || IsS(ch))
+				listSign.addLast(i);
+		}
+		int nextIndex = 0;
+		for(int i = 0;i < listSign.size();++i) 
+		{
+			if(nextIndex == listSign.get(i)) 
+			{
+				char ch = str.charAt(nextIndex);
+				Node nS = new Node();
+				if(ch == '(') 
+				{
+					nS.m_nodeType = "ls";
+					m_nodeList.addLast(nS);
+				}else if(ch == ')') 
+				{
+					nS.m_nodeType = "rs";
+					m_nodeList.addLast(nS);
+				}else 
+				{
+					nS.m_nodeType = "sign";
+					nS.m_sign = ch;
+					m_nodeList.addLast(nS);					
+				}
+				nextIndex = listSign.get(i) + 1;				
+				continue;
+			}
+			String strValItem = str.substring(nextIndex, listSign.get(i));
+			Node n = new Node();
+			n.m_nodeType = "val";
+			n.m_val = Float.parseFloat(strValItem);
+			m_nodeList.addLast(n);
+			
+			Node nS = new Node();
+			char ch = str.charAt(listSign.get(i) );
+			if(IsSign(ch)) {
+				nS.m_nodeType = "sign";
+			}else if(ch == '(')
+				nS.m_nodeType = "ls";
+			else if(ch == ')')
+				nS.m_nodeType = "rs";
+			
+			nS.m_sign = str.charAt(listSign.get(i));
+			m_nodeList.addLast(nS);
+			nextIndex = listSign.get(i) + 1;
+		}
+		char chLast = str.charAt(str.length() - 1);
+		if(chLast != ')') 
+		{
+			String strValItem = str.substring(nextIndex, str.length());
+			Node n = new Node();
+			n.m_nodeType = "val";
+			n.m_val = Float.parseFloat(strValItem);
+			m_nodeList.addLast(n);
+		}
+	}
+	//获取第一个乘除的节点下标
+	private int GetFirstSignM() 
+	{
+		for(int i = 0;i < m_nodeList.size();++i) 
+		{
+			if(m_nodeList.get(i).m_nodeType == "sign") 
+			{
+				if(m_nodeList.get(i).m_sign == '*' || m_nodeList.get(i).m_sign == '/')
+					return i;
+			}
+		}
+		return -1;
+	}
+	
+	//获取第一个加减的节点下标
+	private int GetFirstSignA() 
+	{
+		for(int i = 0;i < m_nodeList.size();++i) 
+		{
+			if(m_nodeList.get(i).m_nodeType == "sign") 
+			{
+				if(m_nodeList.get(i).m_sign == '+' || m_nodeList.get(i).m_sign == '-')
+					return i;
+			}
+		}
+		return -1;
+	}
+		
+	//计算所有的括号里面的
+	private void CalS() 
+	{
+		while(true) 
+		{
+			int index1 = -1;
+			int index2 = -1;
+			for(int i = m_nodeList.size() - 1;i >= 0;--i) 
+			{
+				Node pNodeL = m_nodeList.get(i); 
+				if(pNodeL.m_nodeType != "ls")
+					continue;
+				index1 = i;
+				for(int j = i;j < m_nodeList.size();++j) 
+				{
+					Node pNodeR = m_nodeList.get(j);
+					if(pNodeR.m_nodeType == "rs") 
+					{
+						index2 = j;
+						break;
+					}
+				}
+				break;
+			}
+			if(index1 == -1)
+				break;
+			OutPutDebugNode();
+			String str = NodeToString(index1+1,index2-1);
+			JLogic j = new JLogic();
+			float tmp = j.CalBase(str);
+			Node nNew = new Node();
+			nNew.m_nodeType = "val";
+			nNew.m_val = tmp;
+			for(int i = 0;i < index2-index1+1;++i) 
+			{
+				m_nodeList.remove(index1);
+			}
+			m_nodeList.add(index1, nNew);
+		}
+	}
+	//计算所有的乘除法
+	private void CalM() 
+	{
+		int firstM = GetFirstSignM();
+		while(firstM != -1) 
+		{
+			float first = m_nodeList.get(firstM-1).m_val;
+			float second = m_nodeList.get(firstM+1).m_val;
+			float res = 0;
+			if(m_nodeList.get(firstM).m_sign == '*')
+				res = first*second;
+			else if(m_nodeList.get(firstM).m_sign == '/')
+				res = first/second;
+			else 
+				System.out.println("================error================");
+			Node n = new Node();
+			n.m_nodeType = "val";
+			n.m_val = res;
+			m_nodeList.remove(firstM+1);
+			m_nodeList.remove(firstM);
+			m_nodeList.remove(firstM-1);
+			m_nodeList.add(firstM-1, n);
+			firstM = GetFirstSignM();
+		}
+	}
+	
+	//计算所有的加减法
+	private void CalA() 
+	{
+		int firstA = GetFirstSignA();
+		while(firstA != -1) 
+		{
+			float first = m_nodeList.get(firstA-1).m_val;
+			float second = m_nodeList.get(firstA+1).m_val;
+			float res = 0;
+			if(m_nodeList.get(firstA).m_sign == '+')
+				res = first+second;
+			else if(m_nodeList.get(firstA).m_sign == '-')
+				res = first-second;
+			else 
+				System.out.println("1================error================1");
+			Node n = new Node();
+			n.m_nodeType = "val";
+			n.m_val = res;
+			m_nodeList.remove(firstA+1);
+			m_nodeList.remove(firstA);
+			m_nodeList.remove(firstA-1);
+			m_nodeList.add(firstA-1, n);
+			firstA = GetFirstSignA();
+		}
+	}
+	public float CalBase(String str) 
+	{
+		float retVal = 0;
+		//System.out.println(str);
+		StringToNodeList(str);
+		//OutPutDebugNode();
+		CalS();
+		//OutPutDebugNode();
+		CalM();
+		//OutPutDebugNode();
+		CalA();
+		//OutPutDebugNode();
+		if(m_nodeList.size() != 1)
+			System.out.println("2================error================2");
+		else 
+			retVal = m_nodeList.get(0).m_val;
+		return retVal;
+	}
+	private float DToPi(float d) 
+	{
+		return (float) (d*Math.PI/180);
+	}
+	public float CalSin(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.sin(DToPi(f));
+	}
+	public float CalCos(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.cos(DToPi(f));
+	}
+	public float CalTan(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.tan(DToPi(f));
+	}
+	public float CalCot(String str) 
+	{
+		return 1/CalTan(str);
+	}
+	public float CalPingFang(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return f*f;
+	}
+	public float CalSqrt2(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.sqrt(f);
+	}
+	//里
+	public float CalLi(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return f*500;
+	}
+	//尺
+	public float CalChi(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*0.3333333);
+	}
+	//丈
+	public float CalZHang(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*3.3333333);
+	}
+	//英里
+	public float CalYingLi(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*1609.344);
+	}
+	//英尺
+	public float CalYingChi(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*0.3048);
+	}
+	//英寸
+	public float CalYingCun(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*0.0254);
+	}
+	//斤
+	public float CalJin(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*0.5);
+	}
+	//两
+	public float CalLiang(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*0.05);
+	}
+	//磅
+	public float CalBang(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*0.4535924);
+	}
+	//蛊司
+	public float CalAngSi(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) (f*28.349523148774/1000);
+	}
+	public float CalLoge(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.log(f);
+	}
+	public float CalLog10(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.log10(f);
+	}
+	public float CalEx(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.pow(Math.E, f);
+	}
+	public float CalCeil(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.ceil(f);
+	}
+	public float CalZheng(String str) 
+	{
+		float f = Float.parseFloat(str);
+		return (float) Math.floor(f);
+	}
+}
